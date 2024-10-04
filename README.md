@@ -7,6 +7,8 @@ This project is a Python script designed to arrange images from a specified fold
 - Automatically adjusts image aspect ratios to fit a given canvas.
 - Distributes images across rows to fill the entire width of the canvas without gaps.
 - Supports custom canvas dimensions and row specifications.
+- Option to add padding to the images.
+- Possibility to choose the canvas background color (shows through the padding).
 - Uses face recognition to crop images while trying to keep the subjects in view.
 - Option to shuffle images before arranging them.
 - Provides a progress bar to visualize the loading and arranging processes.
@@ -40,11 +42,13 @@ python photo-collage-maker.py <input_folder> [options]
 - `-o`, `--output` (default: "pic_collage.jpg"): The name of the output file.
 - `-n`, `--num_rows`: Number of rows to arrange the images. If not provided, the script will calculate an optimal value.
 - `-s`, `--shuffle`: Shuffle the images before arranging them.
+- `-p`, `--padding`: Add padding to each image (in pixels).
+- `-c`, `--color`: Canvas background color (shows through the padding).
 - `-Y`, `--overwrite`: Overwrite the output file if it already exists.
 
 ### Example
 ```sh
-python photo-collage-maker.py "C:\Users\<username>\Pictures\MyFolder" -w 1920 -i 1200 -o my_collage.jpg -n 3 -s -Y
+python photo-collage-maker.py "C:\Users\<username>\Pictures\MyFolder" -w 1920 -i 1200 -o my_collage.jpg -n 3 -s -p 5 -c #000000 -Y
 ```
 This command will:
 - Create a collage using images from the specified folder.
@@ -52,6 +56,8 @@ This command will:
 - Output the result as "my_collage.jpg".
 - Arrange the images in 3 rows.
 - Shuffle the images before arranging them.
+- Add a 5 pixels padding around each image.
+- Set the canvas background color to black.
 - Overwrite the output file if it already exists.
 
 ## How It Works
