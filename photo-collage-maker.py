@@ -10,6 +10,7 @@ import random
 from PIL import Image, ExifTags
 import face_recognition
 from tqdm import tqdm
+from argparse import ArgumentParser, ArgumentTypeError
 
 # Function to correct the orientation of an image based on its EXIF data
 def get_image_orientation(image):
@@ -72,8 +73,24 @@ def crop_image(image, target_width, target_height, image_path):
     
     return image.resize((target_width, target_height), Image.LANCZOS)
 
+# Function to parse RGB color string
+def parse_rgb_color(color_string):
+    try:
+        # Remove '#' if present
+        color_string = color_string.lstrip('#')
+        
+        # Parse the color string
+        if len(color_string) == 6:
+            return tuple(int(color_string[i:i+2], 16) for i in (0, 2, 4))
+        elif len(color_string) == 3:
+            return tuple(int(color_string[i]+color_string[i], 16) for i in (0, 1, 2))
+        else:
+            raise ValueError
+    except ValueError:
+        raise argparse.ArgumentTypeError("Invalid color format. Use '#RRGGBB' or '#RGB'")
+
 # Main function to arrange images on a canvas
-def arrange_images_on_canvas(input_folder, canvas_width=1920, canvas_height=1080, output_filename="pic_collage.jpg", num_rows=None, shuffle_images=False, overwrite=False):
+def arrange_images_on_canvas(input_folder, canvas_width=1920, canvas_height=1080, output_filename="pic_collage.jpg", num_rows=None, shuffle_images=False, padding=0, bg_color=(255, 255, 255), overwrite=False):
     # Check if the output file already exists and handle overwriting
     if not overwrite and os.path.exists(output_filename):
         response = input(f"File '{output_filename}' already exists. Overwrite? (y/n): ")
@@ -101,34 +118,34 @@ def arrange_images_on_canvas(input_folder, canvas_width=1920, canvas_height=1080
         num_rows = max(1, round((canvas_height / canvas_width) * (num_images / avg_aspect_ratio) ** 0.5))
     
     num_cols = (num_images + num_rows - 1) // num_rows
-    target_height = canvas_height // num_rows
+    target_height = (canvas_height - (num_rows + 1) * padding) // num_rows
 
     # Create a blank canvas to arrange the images
-    canvas = Image.new('RGB', (canvas_width, canvas_height), (255, 255, 255))
+    canvas = Image.new('RGB', (canvas_width, canvas_height), bg_color)
 
-    current_y = 0
+    current_y = padding
     for row in tqdm(range(num_rows), desc="Arranging rows", ncols=70):
         # Get images for the current row and calculate scaling to fit the canvas width
         row_images = images[row * num_cols:(row + 1) * num_cols]
         total_width = sum(img.width / img.height * target_height for _, img in row_images)
-        scale_factor = canvas_width / total_width if total_width > 0 else 1
+        scale_factor = (canvas_width - (len(row_images) + 1) * padding) / total_width if total_width > 0 else 1
 
         # Adjust the widths to perfectly fit the canvas width
         adjusted_widths = [int((img.width / img.height) * target_height * scale_factor) for _, img in row_images]
-        width_difference = canvas_width - sum(adjusted_widths)
+        width_difference = canvas_width - sum(adjusted_widths) - (len(row_images) + 1) * padding
 
         # Distribute the width difference among the images to fill the entire canvas width
         if width_difference > 0 and row_images:
             for i in range(width_difference):
                 adjusted_widths[i % len(adjusted_widths)] += 1
 
-        current_x = 0
+        current_x = padding
         # Paste each image onto the canvas
         for (image_path, image), target_width in zip(row_images, adjusted_widths):
             image = crop_image(image, target_width, target_height, image_path)
             canvas.paste(image, (current_x, current_y))
-            current_x += target_width
-        current_y += target_height
+            current_x += target_width + padding
+        current_y += target_height + padding
 
     # Save the final canvas image
     output_path = os.path.join(os.getcwd(), output_filename)
@@ -137,7 +154,6 @@ def arrange_images_on_canvas(input_folder, canvas_width=1920, canvas_height=1080
 
 # Main function to parse command line arguments and initiate the process
 def main():
-    from argparse import ArgumentParser
 
     parser = ArgumentParser(description="Arrange images on a canvas.")
     parser.add_argument("input_folder", help="Folder containing the images.")
@@ -146,6 +162,8 @@ def main():
     parser.add_argument("-o", "--output", default="pic_collage.jpg", help="Output filename (default: 'pic_collage.jpg').")
     parser.add_argument("-n", "--num_rows", type=int, help="Number of rows to arrange the images.")
     parser.add_argument("-s", "--shuffle", action="store_true", help="Shuffle images before arranging.")
+    parser.add_argument("-p", "--padding", type=int, default=0, help="Padding around each image (default: 0).")
+    parser.add_argument("-c", "--color", type=parse_rgb_color, default="#FFFFFF", help="Background color in RGB format (default: #FFFFFF).")
     parser.add_argument("-Y", "--overwrite", action="store_true", help="Overwrite the output file if it already exists.")
 
     args = parser.parse_args()
@@ -158,6 +176,8 @@ def main():
         output_filename=args.output,
         num_rows=args.num_rows,
         shuffle_images=args.shuffle,
+        padding=args.padding,
+        bg_color=args.color,
         overwrite=args.overwrite
     )
 
