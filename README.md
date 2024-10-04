@@ -7,6 +7,7 @@ This project is a Python script designed to arrange images from a specified fold
 - Automatically adjusts image aspect ratios to fit a given canvas.
 - Distributes images across rows to fill the entire width of the canvas without gaps.
 - Supports custom canvas dimensions and row specifications.
+- Uses face recognition to crop images while trying to keep the subjects in view.
 - Option to shuffle images before arranging them.
 - Provides a progress bar to visualize the loading and arranging processes.
 - Includes an overwrite check to prevent accidental loss of previous output files.
